@@ -15,11 +15,16 @@ export default async function AdminOrdersPage() {
       .from("orders")
       .select("*, order_items(count)")
       .not("order_number", "like", "REG-%")
+      .not("order_number", "like", "PUSH-%")
       .order("created_at", { ascending: false });
 
     if (orders && orders.length > 0) {
       ordersList = orders.filter(
-        (o) => !o.order_number?.startsWith("REG-") && o.admin_notes !== "CUSTOMER_REGISTRATION"
+        (o) =>
+          !o.order_number?.startsWith("REG-") &&
+          !o.order_number?.startsWith("PUSH-") &&
+          o.admin_notes !== "CUSTOMER_REGISTRATION" &&
+          o.admin_notes !== "PUSH_SUBSCRIPTION"
       );
     }
   } catch (e) {
@@ -28,7 +33,11 @@ export default async function AdminOrdersPage() {
 
   // If Supabase has none or fewer, also merge with local store orders
   const localOrders = getOrdersLocal().filter(
-    (o) => !o.order_number?.startsWith("REG-") && o.admin_notes !== "CUSTOMER_REGISTRATION"
+    (o) =>
+      !o.order_number?.startsWith("REG-") &&
+      !o.order_number?.startsWith("PUSH-") &&
+      o.admin_notes !== "CUSTOMER_REGISTRATION" &&
+      o.admin_notes !== "PUSH_SUBSCRIPTION"
   );
   const existingIds = new Set(ordersList.map((o) => o.id));
   for (const lo of localOrders) {

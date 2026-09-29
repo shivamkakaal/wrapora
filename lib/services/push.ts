@@ -76,7 +76,7 @@ export async function sendPushNotification(
 }
 
 /**
- * Fetch all registered subscriptions from both Supabase and local store fallback.
+ * Fetch all registered subscriptions from Supabase (orders push store & push_subscriptions) and local store fallback.
  * Deduplicates by endpoint.
  */
 export async function getAllPushSubscriptions(
@@ -84,43 +84,76 @@ export async function getAllPushSubscriptions(
 ): Promise<PushSubscriptionRecord[]> {
   const mergedMap = new Map<string, PushSubscriptionRecord>();
 
-  // 1. Get from local store first
-  try {
-    const localSubs = getPushSubscriptionsLocal(audience);
-    for (const sub of localSubs) {
-      if (sub.endpoint && sub.keys?.p256dh && sub.keys?.auth) {
-        mergedMap.set(sub.endpoint, sub);
-      }
-    }
-  } catch (err) {
-    console.error("Error reading local push subscriptions:", err);
-  }
-
-  // 2. Fetch from Supabase
+  // 1. Fetch from Supabase orders table where admin_notes === 'PUSH_SUBSCRIPTION'
   try {
     const supabase = createAdminClient();
-    let query = supabase.from("push_subscriptions").select("*");
-    if (audience) {
-      query = query.eq("audience", audience);
-    }
-    const { data: dbSubs, error } = await query;
-    if (!error && dbSubs && Array.isArray(dbSubs)) {
-      for (const row of dbSubs) {
-        if (row.endpoint && row.keys?.p256dh && row.keys?.auth) {
-          mergedMap.set(row.endpoint, {
-            endpoint: row.endpoint,
-            keys: row.keys,
-            audience: row.audience,
+    const { data: dbOrders, error } = await supabase
+      .from("orders")
+      .select("shipping_address, created_at")
+      .eq("admin_notes", "PUSH_SUBSCRIPTION");
+
+    if (!error && dbOrders && Array.isArray(dbOrders)) {
+      for (const row of dbOrders) {
+        const addr = row.shipping_address as any;
+        if (addr?.endpoint && addr?.keys?.p256dh && addr?.keys?.auth) {
+          if (addr.endpoint.includes("test-sub-123")) continue;
+
+          mergedMap.set(addr.endpoint, {
+            endpoint: addr.endpoint,
+            keys: addr.keys,
+            audience: addr.audience === "admin" ? "admin" : "customer",
             created_at: row.created_at,
           });
         }
       }
     }
   } catch (err) {
-    console.warn("Could not query Supabase push_subscriptions, relying on local store:", err);
+    console.warn("Could not query push subscriptions from Supabase orders:", err);
   }
 
-  return Array.from(mergedMap.values());
+  // 2. Also fetch from Supabase push_subscriptions table
+  try {
+    const supabase = createAdminClient();
+    let query = supabase.from("push_subscriptions").select("*");
+    const { data: dbSubs, error } = await query;
+    if (!error && dbSubs && Array.isArray(dbSubs)) {
+      for (const row of dbSubs) {
+        if (row.endpoint && row.keys?.p256dh && row.keys?.auth) {
+          if (row.endpoint.includes("test-sub-123")) continue;
+
+          mergedMap.set(row.endpoint, {
+            endpoint: row.endpoint,
+            keys: row.keys,
+            audience: row.audience === "admin" ? "admin" : "customer",
+            created_at: row.created_at,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Could not query Supabase push_subscriptions table:", err);
+  }
+
+  // 3. Fallback to local store (excluding test dummy)
+  try {
+    const localSubs = getPushSubscriptionsLocal();
+    for (const sub of localSubs) {
+      if (sub.endpoint && sub.keys?.p256dh && sub.keys?.auth) {
+        if (sub.endpoint.includes("test-sub-123")) continue;
+        if (!mergedMap.has(sub.endpoint)) {
+          mergedMap.set(sub.endpoint, sub);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error reading local push subscriptions:", err);
+  }
+
+  let list = Array.from(mergedMap.values());
+  if (audience) {
+    list = list.filter((s) => s.audience === audience);
+  }
+  return list;
 }
 
 /**

@@ -54,6 +54,9 @@ export async function fetchAggregatedCustomers(): Promise<CustomerLeadData[]> {
 
   // Process all orders into customerMap
   for (const o of allOrders) {
+    if (o.order_number?.startsWith("PUSH-") || o.admin_notes === "PUSH_SUBSCRIPTION") {
+      continue;
+    }
     const norm = normalizePhone(o.customer_phone);
     if (!norm) continue;
 

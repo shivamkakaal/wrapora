@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const allSubs = await getAllPushSubscriptions();
     const customerSubs = allSubs.filter((s) => s.audience === "customer");
-    const adminSubs = allSubs.filter((s) => s.audience === "admin" || !s.audience);
+    const adminSubs = allSubs.filter((s) => s.audience === "admin");
     const history = getAnnouncementsLocal();
 
     return NextResponse.json({

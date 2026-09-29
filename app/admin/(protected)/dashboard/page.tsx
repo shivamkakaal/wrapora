@@ -18,12 +18,14 @@ export default async function AdminDashboard() {
     supabase
       .from("orders")
       .select("*", { count: "exact", head: true })
-      .not("order_number", "like", "REG-%"),
+      .not("order_number", "like", "REG-%")
+      .not("order_number", "like", "PUSH-%"),
     supabase.from("event_leads").select("*", { count: "exact", head: true }).in("status", ["pending", "confirmed"]),
     supabase
       .from("orders")
       .select("*")
       .not("order_number", "like", "REG-%")
+      .not("order_number", "like", "PUSH-%")
       .order("created_at", { ascending: false })
       .limit(5),
     supabase.from("event_leads").select("*").order("created_at", { ascending: false }).limit(5),
@@ -31,7 +33,10 @@ export default async function AdminDashboard() {
   ]);
 
   const completedOrders = (recentOrders || []).filter(
-    (o) => o.status === "completed" && !o.order_number?.startsWith("REG-")
+    (o) =>
+      o.status === "completed" &&
+      !o.order_number?.startsWith("REG-") &&
+      !o.order_number?.startsWith("PUSH-")
   );
   const revenuePaise = completedOrders.reduce((sum: number, o: { total_paise: number }) => sum + o.total_paise, 0);
 
