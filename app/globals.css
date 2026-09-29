@@ -1,26 +1,318 @@
 @import "tailwindcss";
 
+@theme {
+  --color-royal-50: #FAF5FF;
+  --color-royal-100: #F3E8FF;
+  --color-royal-200: #E9D5FF;
+  --color-royal-300: #D8B4FE;
+  --color-royal-400: #9333EA;
+  --color-royal-500: #7A1AD4;
+  --color-royal-600: #6215AA;
+  --color-royal-700: #4B1082;
+  --color-royal-800: #340B5B;
+  --color-royal-900: #250842;
+  --color-royal-950: #19032E;
+  --color-royal: #250842;
+
+  --color-magenta-50: #FDF2F8;
+  --color-magenta-100: #FCE7F3;
+  --color-magenta-200: #FBCFE8;
+  --color-magenta-300: #FFA8D5;
+  --color-magenta-400: #FF66B2;
+  --color-magenta-500: #FF2E93;
+  --color-magenta-600: #D91B60;
+  --color-magenta-700: #BD1151;
+  --color-magenta-800: #9E0D43;
+  --color-magenta-900: #7A0A33;
+  --color-magenta: #D91B60;
+
+  --color-ink: #1F1030;
+  --color-cream: #FFF9FB;
+
+  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #FFF9FB;
+  --foreground: #1F1030;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+}
+
+.font-playfair {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #250842, #D91B60);
+}
+
+.pink-gradient {
+  background: linear-gradient(135deg, #FF2E93, #D91B60);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, #250842 15%, #D91B60 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-royal {
+  box-shadow: 0 10px 30px -10px rgba(37, 8, 66, 0.45);
+}
+
+.shadow-pink {
+  box-shadow: 0 10px 25px -5px rgba(217, 27, 96, 0.45);
+}
+
+.glass-nav {
+  background: rgba(255, 249, 251, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Animations */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.9) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce-once {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-slide-down {
+  animation: slide-down 0.25s ease-out;
+}
+.animate-scale-up {
+  animation: scale-up 0.2s ease-out;
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+.animate-bounce-once {
+  animation: bounce-once 0.4s ease-out;
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Stagger delays for child animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Card Shine Sweep, Floating, and Drawer Animations */
+@keyframes shine-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-25deg);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes sparkle-spin {
+  0% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8) rotate(360deg);
+    opacity: 0.6;
+  }
+}
+
+@keyframes drawer-spring-in {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  70% {
+    transform: translateX(-1.5%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+.animate-sparkle-spin {
+  animation: sparkle-spin 3s ease-in-out infinite;
+}
+
+@keyframes sticker-bounce {
+  0% { transform: scale(1); }
+  20% { transform: scale(0.86) rotate(-3deg); }
+  45% { transform: scale(1.15) rotate(3deg); }
+  70% { transform: scale(0.95) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes shockwave {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+    border-width: 4px;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes particle-burst {
+  0% {
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx, 60px), var(--ty, -60px)) scale(1.2) rotate(var(--rot, 90deg));
+    opacity: 0;
+  }
+}
+
+@keyframes card-cascade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-sticker-bounce {
+  animation: sticker-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-shockwave {
+  animation: shockwave 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-drawer-spring {
+  animation: drawer-spring-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-card-cascade {
+  animation: card-cascade 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Utility to completely hide scrollbars where needed */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Thin, simple, minimalist global scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 33, 168, 0.5);
+}
+
+/* Mobile Responsive Adaptive Enhancements */
+@supports (-webkit-touch-callout: none) {
+  /* Prevent iOS Safari 16px auto-zoom on input focus */
+  @media screen and (max-width: 767px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    input[type="date"],
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* Touch momentum scrolling */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iPhone notch & gesture bar safe padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
 }

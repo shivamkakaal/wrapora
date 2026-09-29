@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline | WRAPORA</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #FFF9FB;
+      color: #1F1030;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 40px 24px;
+      max-width: 420px;
+      box-shadow: 0 10px 30px -10px rgba(107,33,168,.15);
+      border: 1px solid #F3E8FF;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 16px 0 8px;
+      color: #6B21A8;
+    }
+    p {
+      font-size: 14px;
+      color: #554562;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #6B21A8, #DB2777);
+      color: #FFF;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="font-size: 40px;">⚡</div>
+    <h1>You are currently offline</h1>
+    <p>Please check your internet connection to view latest collections or complete your event booking.</p>
+    <button class="btn" onclick="window.location.reload()">Retry Connection</button>
+  </div>
+</body>
+</html>
