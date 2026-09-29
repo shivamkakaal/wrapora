@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPaiseToInr, formatDate } from "@/lib/utils/format";
 import { ShoppingCart, Users, DollarSign, Package } from "lucide-react";
 import Link from "next/link";
+import { isSyntheticOrder, resolveAuthoritativeOrderStatus } from "@/lib/utils/order_status";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function AdminDashboard() {
   const [
     { count: totalOrders },
     { count: activeLeads },
-    { data: recentOrders },
+    { data: recentOrdersRaw },
     { data: recentLeads },
     { count: totalProducts },
   ] = await Promise.all([
@@ -23,20 +24,22 @@ export default async function AdminDashboard() {
     supabase.from("event_leads").select("*", { count: "exact", head: true }).in("status", ["pending", "confirmed"]),
     supabase
       .from("orders")
-      .select("*")
+      .select("*, order_items(id, name_snapshot, customization_note, image_snapshot)")
       .not("order_number", "like", "REG-%")
       .not("order_number", "like", "PUSH-%")
       .order("created_at", { ascending: false })
-      .limit(5),
+      .limit(10),
     supabase.from("event_leads").select("*").order("created_at", { ascending: false }).limit(5),
     supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true),
   ]);
 
+  const recentOrders = (recentOrdersRaw || [])
+    .filter((o) => !isSyntheticOrder(o.order_number, o.admin_notes))
+    .slice(0, 5)
+    .map((o) => resolveAuthoritativeOrderStatus(o));
+
   const completedOrders = (recentOrders || []).filter(
-    (o) =>
-      o.status === "completed" &&
-      !o.order_number?.startsWith("REG-") &&
-      !o.order_number?.startsWith("PUSH-")
+    (o) => o.status === "completed"
   );
   const revenuePaise = completedOrders.reduce((sum: number, o: { total_paise: number }) => sum + o.total_paise, 0);
 

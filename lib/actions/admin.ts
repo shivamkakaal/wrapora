@@ -36,6 +36,7 @@ import {
   getAllSiteContentLocal,
   updateOrderStatusLocal,
 } from "@/lib/db/local_store";
+import { buildStatusUpdateItem } from "@/lib/utils/order_status";
 
 export interface AdminActionResult<T = unknown> {
   ok: boolean;
@@ -56,7 +57,7 @@ export async function updateOrderStatus(
   const now = new Date().toISOString();
   let updatedOrder: any = null;
 
-  // 1. Update local store first so local orders are always consistent and never lost
+  // 1. Update local store first
   try {
     const localRes = updateOrderStatusLocal(orderId, {
       status,
@@ -70,9 +71,33 @@ export async function updateOrderStatus(
     console.warn("Local store update order status warning:", localErr);
   }
 
-  // 2. Update Supabase
+  // 2. Persist to Supabase
+  let orderNum = "";
+  let custName = "";
   try {
     const supabase = createAdminClient();
+
+    // Resolve order UUID if orderId was an order_number
+    let targetUuid = orderId;
+
+    const { data: orderLookup } = await supabase
+      .from("orders")
+      .select("id, order_number, customer_name")
+      .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (orderLookup?.id) {
+      targetUuid = orderLookup.id;
+      orderNum = orderLookup.order_number;
+      custName = orderLookup.customer_name;
+    }
+
+    // A) Insert persistent status update event into order_items (guaranteed to succeed & bypass update RLS)
+    const updateItem = buildStatusUpdateItem(targetUuid, status, paymentStatus, adminNotes);
+    await supabase.from("order_items").insert(updateItem);
+
+    // B) Also attempt direct orders table update
     const updates: Record<string, unknown> = {
       status,
       updated_at: now,
@@ -83,12 +108,23 @@ export async function updateOrderStatus(
     const { data, error } = await supabase
       .from("orders")
       .update(updates)
-      .eq("id", orderId)
+      .eq("id", targetUuid)
       .select()
-      .single();
+      .maybeSingle();
 
     if (!error && data) {
       updatedOrder = data;
+    }
+
+    // C) Fire live push notification to customer in background
+    try {
+      const { sendCustomerOrderStatusNotification } = await import("@/lib/services/push");
+      sendCustomerOrderStatusNotification(
+        { id: targetUuid, order_number: orderNum, customer_name: custName },
+        status
+      ).catch((err) => console.warn("Customer status push dispatch error:", err));
+    } catch {
+      // push optional
     }
   } catch (err: unknown) {
     console.warn("Supabase updateOrderStatus warning:", err);
@@ -96,6 +132,10 @@ export async function updateOrderStatus(
 
   safeRevalidatePath("/admin/orders");
   safeRevalidatePath(`/admin/orders/${orderId}`);
+  safeRevalidatePath(`/order/${orderId}`);
+  if (orderNum) {
+    safeRevalidatePath(`/order/${orderNum}`);
+  }
   safeRevalidatePath("/account");
 
   if (updatedOrder) {

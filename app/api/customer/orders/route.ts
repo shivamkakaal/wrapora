@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrdersByPhoneLocal, normalizePhone } from "@/lib/db/local_store";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Order } from "@/lib/supabase/types";
+import { isSyntheticOrder, resolveAuthoritativeOrderStatus } from "@/lib/utils/order_status";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,26 +41,33 @@ export async function GET(request: NextRequest) {
 
       if (!error && dbOrders && dbOrders.length > 0) {
         for (const o of dbOrders) {
-          combinedOrders.push(o as Order);
-          seenIds.add(o.id);
+          if (!isSyntheticOrder(o.order_number, o.admin_notes)) {
+            const resolved = resolveAuthoritativeOrderStatus(o as Order);
+            combinedOrders.push(resolved);
+            seenIds.add(o.id);
+          }
         }
       }
     } catch (e) {
       console.warn("Supabase query in /api/customer/orders skipped:", e);
     }
 
-    // 2. Merge with Local Store orders (local store has authoritative latest real-time status updates)
-    const localOrders = getOrdersByPhoneLocal(normPhone);
+    // 2. Merge with Local Store orders
+    const localOrders = getOrdersByPhoneLocal(normPhone).filter(
+      (lo) => !isSyntheticOrder(lo.order_number, lo.admin_notes)
+    );
     for (const lo of localOrders) {
       if (!seenIds.has(lo.id)) {
-        combinedOrders.push(lo);
+        combinedOrders.push(resolveAuthoritativeOrderStatus(lo));
         seenIds.add(lo.id);
       } else {
         // If already in combinedOrders from Supabase, check which one has the freshest updated_at or status
         const existingIdx = combinedOrders.findIndex((o) => o.id === lo.id);
         if (existingIdx >= 0) {
           const localUpdated = new Date(lo.updated_at || lo.created_at).getTime();
-          const dbUpdated = new Date(combinedOrders[existingIdx].updated_at || combinedOrders[existingIdx].created_at).getTime();
+          const dbUpdated = new Date(
+            combinedOrders[existingIdx].updated_at || combinedOrders[existingIdx].created_at
+          ).getTime();
           if (localUpdated >= dbUpdated || lo.status !== combinedOrders[existingIdx].status) {
             combinedOrders[existingIdx] = {
               ...combinedOrders[existingIdx],

@@ -3,6 +3,7 @@ import { formatPaiseToInr, formatDate } from "@/lib/utils/format";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 import Link from "next/link";
 import { getOrdersLocal } from "@/lib/db/local_store";
+import { isSyntheticOrder, resolveAuthoritativeOrderStatus } from "@/lib/utils/order_status";
 
 export const dynamic = "force-dynamic";
 
@@ -13,32 +14,25 @@ export default async function AdminOrdersPage() {
   try {
     const { data: orders } = await supabase
       .from("orders")
-      .select("*, order_items(count)")
+      .select("*, order_items(id, name_snapshot, customization_note, image_snapshot)")
       .not("order_number", "like", "REG-%")
       .not("order_number", "like", "PUSH-%")
       .order("created_at", { ascending: false });
 
     if (orders && orders.length > 0) {
-      ordersList = orders.filter(
-        (o) =>
-          !o.order_number?.startsWith("REG-") &&
-          !o.order_number?.startsWith("PUSH-") &&
-          o.admin_notes !== "CUSTOMER_REGISTRATION" &&
-          o.admin_notes !== "PUSH_SUBSCRIPTION"
-      );
+      ordersList = orders
+        .filter((o) => !isSyntheticOrder(o.order_number, o.admin_notes))
+        .map((o) => resolveAuthoritativeOrderStatus(o));
     }
   } catch (e) {
     console.warn("Supabase orders query error, falling back to local store:", e);
   }
 
   // If Supabase has none or fewer, also merge with local store orders
-  const localOrders = getOrdersLocal().filter(
-    (o) =>
-      !o.order_number?.startsWith("REG-") &&
-      !o.order_number?.startsWith("PUSH-") &&
-      o.admin_notes !== "CUSTOMER_REGISTRATION" &&
-      o.admin_notes !== "PUSH_SUBSCRIPTION"
-  );
+  const localOrders = getOrdersLocal()
+    .filter((o) => !isSyntheticOrder(o.order_number, o.admin_notes))
+    .map((o) => resolveAuthoritativeOrderStatus(o));
+
   const existingIds = new Set(ordersList.map((o) => o.id));
   for (const lo of localOrders) {
     if (!existingIds.has(lo.id)) {

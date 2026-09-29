@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Calendar, Gift, User, Phone, Mail } from "lucide-react";
 import { getOrderByIdLocal } from "@/lib/db/local_store";
+import { resolveAuthoritativeOrderStatus } from "@/lib/utils/order_status";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,9 @@ export default async function AdminOrderDetailPage({ params }: OrderDetailPagePr
     const { data } = await supabase
       .from("orders")
       .select("*, order_items(*)")
-      .eq("id", id)
-      .single();
+      .or(`id.eq.${id},order_number.eq.${id}`)
+      .limit(1)
+      .maybeSingle();
     if (data) {
       order = data;
     }
@@ -38,6 +40,9 @@ export default async function AdminOrderDetailPage({ params }: OrderDetailPagePr
   if (!order) {
     notFound();
   }
+
+  // Resolve authoritative status from latest __STATUS_UPDATE__ event
+  order = resolveAuthoritativeOrderStatus(order);
 
   const shipping = order.shipping_address as {
     line1?: string;

@@ -333,3 +333,71 @@ export async function broadcastAnnouncement(options: {
     announcement: record,
   };
 }
+
+/**
+ * Broadcast an order status update push notification to customer subscribers
+ */
+export async function sendCustomerOrderStatusNotification(
+  order: { id: string; order_number?: string; customer_name?: string },
+  newStatus: string
+): Promise<{ sent: number; failed: number }> {
+  const customerSubs = await getAllPushSubscriptions("customer");
+  if (customerSubs.length === 0) {
+    return { sent: 0, failed: 0 };
+  }
+
+  const orderNum = order.order_number || order.id.slice(0, 8).toUpperCase();
+  const statusEmoji =
+    newStatus === "confirmed"
+      ? "✨"
+      : newStatus === "dispatched"
+      ? "🚚"
+      : newStatus === "completed"
+      ? "🎁"
+      : "📦";
+
+  const statusTitle =
+    newStatus === "confirmed"
+      ? `${statusEmoji} Order #${orderNum} Confirmed!`
+      : newStatus === "dispatched"
+      ? `${statusEmoji} Order #${orderNum} Out for Delivery!`
+      : newStatus === "completed"
+      ? `${statusEmoji} Order #${orderNum} Delivered & Celebrated!`
+      : `Order #${orderNum} Status: ${newStatus.toUpperCase()}`;
+
+  const statusBody =
+    newStatus === "confirmed"
+      ? `Great news! Your luxury gifting order has been accepted and is being handcrafted with love.`
+      : newStatus === "dispatched"
+      ? `Your curated gift box has been dispatched and is on its way to your destination.`
+      : newStatus === "completed"
+      ? `Your order has been safely delivered. Thank you for celebrating with WRAPORA!`
+      : `Your order status has changed to ${newStatus}. Tap to track live.`;
+
+  const payload: PushNotificationPayload = {
+    title: statusTitle,
+    body: statusBody,
+    url: `/order/${order.id}`,
+    tag: `status-${order.id}-${newStatus}`,
+    data: {
+      orderId: order.id,
+      orderNumber: orderNum,
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+
+  let sent = 0;
+  let failed = 0;
+
+  await Promise.all(
+    customerSubs.map(async (sub) => {
+      const res = await sendPushNotification(sub, payload);
+      if (res.success) sent++;
+      else failed++;
+    })
+  );
+
+  return { sent, failed };
+}
+
