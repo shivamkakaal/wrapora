@@ -38,6 +38,13 @@ export async function updateSession(request: NextRequest) {
   const adminCookie = request.cookies.get("wrapoura_admin_session");
   const isAuthenticatedAdmin = !!user || !!adminCookie?.value;
 
+  // Handle direct /admin or /admin/ visits
+  if (pathname === "/admin" || pathname === "/admin/") {
+    const url = request.nextUrl.clone();
+    url.pathname = isAuthenticatedAdmin ? "/admin/dashboard" : "/admin/login";
+    return NextResponse.redirect(url);
+  }
+
   // Protect /admin routes (except /admin/login)
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     if (!isAuthenticatedAdmin) {
