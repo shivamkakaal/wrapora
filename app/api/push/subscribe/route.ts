@@ -29,7 +29,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { subscription, audience = "customer" } = body;
+    const { subscription, audience = "customer", customerPhone, customerName } = body;
 
     if (!subscription || !subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
       return NextResponse.json(
@@ -60,10 +60,11 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
 
     // 2. Persist to Supabase orders table with admin_notes: 'PUSH_SUBSCRIPTION'
-    // This guarantees persistent storage on Vercel with standard public insert & select policies
+    // Uses distinct prefix per audience (PUSH-CUST- vs PUSH-ADM-) to allow devices to be registered for both
     try {
       const hash = crypto.createHash("md5").update(record.endpoint).digest("hex").slice(0, 16);
-      const orderNumber = `PUSH-${hash}`;
+      const prefix = resolvedAudience === "admin" ? "PUSH-ADM-" : "PUSH-CUST-";
+      const orderNumber = `${prefix}${hash}`;
 
       const { data: existing } = await supabase
         .from("orders")
@@ -72,14 +73,23 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       if (!existing || existing.length === 0) {
+        const displayName = customerName
+          ? `${customerName} (${resolvedAudience === "admin" ? "Admin" : "VIP Customer"})`
+          : resolvedAudience === "admin"
+          ? "Admin Push Device"
+          : "VIP Customer Device";
+
         await supabase.from("orders").insert({
           order_number: orderNumber,
-          customer_name: resolvedAudience === "admin" ? "Admin Push Device" : "Customer Device",
-          customer_phone: "0000000000",
+          customer_name: displayName,
+          customer_phone: customerPhone || "0000000000",
           shipping_address: {
             endpoint: record.endpoint,
             keys: record.keys,
             audience: resolvedAudience,
+            phone: customerPhone || null,
+            name: customerName || null,
+            updated_at: new Date().toISOString(),
           },
           total_paise: 0,
           subtotal_paise: 0,
@@ -111,6 +121,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       message: "Push subscription successfully saved",
       audience: resolvedAudience,
+      customerPhone: customerPhone || null,
     });
   } catch (err: unknown) {
     const error = err as Error;

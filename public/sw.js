@@ -114,33 +114,54 @@ self.addEventListener("fetch", (event) => {
 // Push notifications listener
 self.addEventListener("push", (event) => {
   if (!event.data) return;
-  try {
-    const data = event.data.json();
-    const isAnnouncement = data.tag?.startsWith("announcement-");
-    const title = data.title || (isAnnouncement ? "WRAPORA Special Announcement" : "WRAPORA Luxury Events & Gifting");
-    const targetUrl = data.url || (isAnnouncement ? "/" : "/admin/orders");
-    
-    const options = {
-      body: data.body || (isAnnouncement ? "Check out the latest updates and offers!" : "New order update received."),
-      icon: data.icon || "/icons/icon-192.png",
-      badge: data.badge || "/icons/icon-192.png",
-      vibrate: [300, 100, 300, 100, 400],
-      requireInteraction: true,
-      renotify: true,
-      tag: data.tag || `notification-${Date.now()}`,
-      data: {
-        url: targetUrl,
-        timestamp: Date.now(),
-        ...data.data,
-      },
-      actions: isAnnouncement
-        ? [{ action: "explore", title: "✨ Explore Now" }]
-        : [{ action: "view", title: "🛍️ View Order" }],
-    };
-    event.waitUntil(self.registration.showNotification(title, options));
-  } catch (err) {
-    console.error("Push notification error in sw:", err);
-  }
+
+  const showPromise = (async () => {
+    try {
+      let data = {};
+      try {
+        data = event.data.json();
+      } catch {
+        data = { body: event.data.text() };
+      }
+
+      const isAnnouncement = data.tag?.startsWith("announcement-");
+      const title = data.title || (isAnnouncement ? "WRAPORA Special Announcement" : "WRAPORA Luxury Events & Gifting");
+      const targetUrl = data.url || (isAnnouncement ? "/" : "/account");
+
+      const baseOptions = {
+        body: data.body || (isAnnouncement ? "Check out the latest updates and offers!" : "New update from WRAPORA."),
+        icon: data.icon || "/icons/icon-192.png",
+        badge: data.badge || "/icons/icon-192.png",
+        tag: data.tag || `notification-${Date.now()}`,
+        data: {
+          url: targetUrl,
+          timestamp: Date.now(),
+          ...data.data,
+        },
+      };
+
+      try {
+        // Try rich options with vibration & actions on supported platforms
+        const richOptions = {
+          ...baseOptions,
+          vibrate: [250, 100, 250, 100, 300],
+          requireInteraction: true,
+          renotify: true,
+          actions: isAnnouncement
+            ? [{ action: "explore", title: "✨ Open WRAPORA" }]
+            : [{ action: "view", title: "🛍️ View Details" }],
+        };
+        await self.registration.showNotification(title, richOptions);
+      } catch (richErr) {
+        console.warn("Retrying with basic options (likely iOS/Safari limitation):", richErr);
+        await self.registration.showNotification(title, baseOptions);
+      }
+    } catch (err) {
+      console.error("Critical error showing push notification in SW:", err);
+    }
+  })();
+
+  event.waitUntil(showPromise);
 });
 
 self.addEventListener("notificationclick", (event) => {

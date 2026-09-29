@@ -81,12 +81,24 @@ export default function CustomerAuthModal({
       }
 
       // Update client session state
+      const userPhone = data.customer?.phone || cleanPhone;
+      const userName = data.customer?.name || fullName.trim() || null;
+
       setLogin({
-        phone: data.customer?.phone || cleanPhone,
-        name: data.customer?.name || fullName.trim() || null,
+        phone: userPhone,
+        name: userName,
         email: data.customer?.email || null,
         savedAddress: data.customer?.savedAddress || null,
       });
+
+      // Seamlessly bind push notifications to this newly registered customer
+      if (typeof window !== "undefined" && "Notification" in window) {
+        import("@/lib/utils/push").then(({ subscribeUserToPush }) => {
+          subscribeUserToPush("customer", userPhone, userName || undefined).catch((e) =>
+            console.warn("Push subscription on sign in warning:", e)
+          );
+        });
+      }
 
       setSuccessMsg("Welcome to WRAPORA! You are now signed in.");
 

@@ -10,7 +10,11 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export async function subscribeUserToPush(audience: "customer" | "admin" = "customer"): Promise<{
+export async function subscribeUserToPush(
+  audience: "customer" | "admin" = "customer",
+  customerPhone?: string,
+  customerName?: string
+): Promise<{
   success: boolean;
   message?: string;
   error?: string;
@@ -114,6 +118,8 @@ export async function subscribeUserToPush(audience: "customer" | "admin" = "cust
       body: JSON.stringify({
         subscription: sub.toJSON(),
         audience,
+        customerPhone: customerPhone || undefined,
+        customerName: customerName || undefined,
       }),
     });
 

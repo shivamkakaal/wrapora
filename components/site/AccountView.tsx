@@ -50,24 +50,42 @@ export default function AccountView() {
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   const initialAutoExpandedRef = useRef(false);
 
+  const [pushTesting, setPushTesting] = useState(false);
+
   useEffect(() => {
     setMounted(true);
     if (typeof window !== "undefined" && "Notification" in window) {
-      setPushActive(Notification.permission === "granted");
+      const isGranted = Notification.permission === "granted";
+      setPushActive(isGranted);
+      if (isGranted) {
+        // Automatically sync and bind push token with registered user's phone & name in Supabase
+        subscribeUserToPush("customer", loggedInPhone || undefined, loggedInName || undefined).catch(() => {});
+      }
     }
-  }, []);
+  }, [loggedInPhone, loggedInName]);
 
   const handleTogglePush = async () => {
     try {
       setPushEnabling(true);
       setPushStatus(null);
-      const res = await subscribeUserToPush("customer");
+      const res = await subscribeUserToPush(
+        "customer",
+        loggedInPhone || undefined,
+        loggedInName || undefined
+      );
       if (res.success) {
         setPushActive(true);
         setPushStatus({
           type: "success",
-          text: "Push Notifications are now Active on this device! ✓",
+          text: "VIP Announcements & Alerts are now Active on this device! ✓",
         });
+
+        // Trigger welcome VIP notification immediately
+        fetch("/api/push/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audience: "customer" }),
+        }).catch(() => {});
       } else {
         setPushStatus({
           type: "error",
@@ -82,6 +100,38 @@ export default function AccountView() {
       });
     } finally {
       setPushEnabling(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    try {
+      setPushTesting(true);
+      setPushStatus(null);
+      const res = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audience: "customer" }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setPushStatus({
+          type: "success",
+          text: "✨ Test notification sent! Check your notification center or lock screen.",
+        });
+      } else {
+        setPushStatus({
+          type: "error",
+          text: data.error || data.message || "Could not deliver test notification.",
+        });
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setPushStatus({
+        type: "error",
+        text: error.message || "Failed to send test push.",
+      });
+    } finally {
+      setPushTesting(false);
     }
   };
 
@@ -328,7 +378,18 @@ export default function AccountView() {
             </div>
           </div>
 
-          {!pushActive && (
+          {pushActive ? (
+            <button
+              type="button"
+              onClick={handleSendTestPush}
+              disabled={pushTesting}
+              className="self-start sm:self-auto px-4 py-2 rounded-full text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 shadow-xs transition-all cursor-pointer disabled:opacity-50 flex-shrink-0 flex items-center gap-1.5"
+              title="Test notification delivery on this device"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#D91B60]" />
+              <span>{pushTesting ? "Sending Test..." : "Send Test Alert"}</span>
+            </button>
+          ) : (
             <button
               type="button"
               onClick={handleTogglePush}

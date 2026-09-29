@@ -4,6 +4,7 @@ import {
   getPushSubscriptionsLocal,
   deletePushSubscriptionLocal,
   saveAnnouncementLocal,
+  getAnnouncementsLocal,
   type PushSubscriptionRecord,
   type AnnouncementRecord,
 } from "@/lib/db/local_store";
@@ -77,6 +78,23 @@ export async function sendPushNotification(
 
 /**
  * Fetch all registered subscriptions from Supabase (orders push store & push_subscriptions) and local store fallback.
+/**
+ * Helper to identify and discard dummy/mock test endpoints
+ */
+function isDummyEndpoint(endpoint: string): boolean {
+  if (!endpoint || typeof endpoint !== "string") return true;
+  return (
+    endpoint.includes("test-sub-123") ||
+    endpoint.includes("device-1790678") ||
+    endpoint.includes("customer-phone-") ||
+    endpoint.includes("admin-device-test") ||
+    endpoint.includes("example.com") ||
+    endpoint.includes("dummy")
+  );
+}
+
+/**
+ * Fetch all registered subscriptions from Supabase (orders push store & push_subscriptions) and local store fallback.
  * Deduplicates by endpoint.
  */
 export async function getAllPushSubscriptions(
@@ -84,26 +102,41 @@ export async function getAllPushSubscriptions(
 ): Promise<PushSubscriptionRecord[]> {
   const mergedMap = new Map<string, PushSubscriptionRecord>();
 
-  // 1. Fetch from Supabase orders table where admin_notes === 'PUSH_SUBSCRIPTION'
+  // 1. Fetch from Supabase orders table where admin_notes === 'PUSH_SUBSCRIPTION' or order_number like 'PUSH-%'
   try {
     const supabase = createAdminClient();
     const { data: dbOrders, error } = await supabase
       .from("orders")
-      .select("shipping_address, created_at")
-      .eq("admin_notes", "PUSH_SUBSCRIPTION");
+      .select("shipping_address, created_at, order_number, customer_name, customer_phone")
+      .or("admin_notes.eq.PUSH_SUBSCRIPTION,order_number.like.PUSH-%");
 
     if (!error && dbOrders && Array.isArray(dbOrders)) {
       for (const row of dbOrders) {
         const addr = row.shipping_address as any;
         if (addr?.endpoint && addr?.keys?.p256dh && addr?.keys?.auth) {
-          if (addr.endpoint.includes("test-sub-123")) continue;
+          if (isDummyEndpoint(addr.endpoint)) continue;
 
-          mergedMap.set(addr.endpoint, {
-            endpoint: addr.endpoint,
-            keys: addr.keys,
-            audience: addr.audience === "admin" ? "admin" : "customer",
-            created_at: row.created_at,
-          });
+          const isCustomer =
+            addr.audience === "customer" ||
+            row.order_number?.startsWith("PUSH-CUST-") ||
+            (row.customer_phone && row.customer_phone !== "0000000000");
+
+          const resolvedAudience: "admin" | "customer" = isCustomer ? "customer" : (addr.audience === "admin" ? "admin" : "customer");
+
+          if (mergedMap.has(addr.endpoint)) {
+            const existing = mergedMap.get(addr.endpoint)!;
+            // Customer status takes precedence
+            if (resolvedAudience === "customer") {
+              existing.audience = "customer";
+            }
+          } else {
+            mergedMap.set(addr.endpoint, {
+              endpoint: addr.endpoint,
+              keys: addr.keys,
+              audience: resolvedAudience,
+              created_at: row.created_at,
+            });
+          }
         }
       }
     }
@@ -114,19 +147,25 @@ export async function getAllPushSubscriptions(
   // 2. Also fetch from Supabase push_subscriptions table
   try {
     const supabase = createAdminClient();
-    let query = supabase.from("push_subscriptions").select("*");
-    const { data: dbSubs, error } = await query;
+    const { data: dbSubs, error } = await supabase.from("push_subscriptions").select("*");
     if (!error && dbSubs && Array.isArray(dbSubs)) {
       for (const row of dbSubs) {
         if (row.endpoint && row.keys?.p256dh && row.keys?.auth) {
-          if (row.endpoint.includes("test-sub-123")) continue;
+          if (isDummyEndpoint(row.endpoint)) continue;
 
-          mergedMap.set(row.endpoint, {
-            endpoint: row.endpoint,
-            keys: row.keys,
-            audience: row.audience === "admin" ? "admin" : "customer",
-            created_at: row.created_at,
-          });
+          if (mergedMap.has(row.endpoint)) {
+            const existing = mergedMap.get(row.endpoint)!;
+            if (row.audience === "customer") {
+              existing.audience = "customer";
+            }
+          } else {
+            mergedMap.set(row.endpoint, {
+              endpoint: row.endpoint,
+              keys: row.keys,
+              audience: row.audience === "admin" ? "admin" : "customer",
+              created_at: row.created_at,
+            });
+          }
         }
       }
     }
@@ -139,9 +178,11 @@ export async function getAllPushSubscriptions(
     const localSubs = getPushSubscriptionsLocal();
     for (const sub of localSubs) {
       if (sub.endpoint && sub.keys?.p256dh && sub.keys?.auth) {
-        if (sub.endpoint.includes("test-sub-123")) continue;
+        if (isDummyEndpoint(sub.endpoint)) continue;
         if (!mergedMap.has(sub.endpoint)) {
           mergedMap.set(sub.endpoint, sub);
+        } else if (sub.audience === "customer") {
+          mergedMap.get(sub.endpoint)!.audience = "customer";
         }
       }
     }
@@ -224,7 +265,7 @@ export async function broadcastOrderNotification(order: Order): Promise<{
 /**
  * Send a test push notification to verify setup
  */
-export async function sendTestNotification(audience: "admin" | "customer" = "admin") {
+export async function sendTestNotification(audience: "admin" | "customer" = "customer") {
   const subs = await getAllPushSubscriptions(audience);
   const targetSubs = subs.length > 0 ? subs : await getAllPushSubscriptions();
 
@@ -233,9 +274,12 @@ export async function sendTestNotification(audience: "admin" | "customer" = "adm
   }
 
   const payload: PushNotificationPayload = {
-    title: "🔔 WRAPORA Order Alerts Active!",
-    body: "Push notifications are working perfectly! You will receive instant alerts whenever a customer places an order.",
-    url: "/admin/orders",
+    title: audience === "customer" ? "✨ WRAPORA VIP Alerts Active!" : "🔔 WRAPORA Order Alerts Active!",
+    body:
+      audience === "customer"
+        ? "Welcome to VIP Announcements & Alerts! You will now receive secret festive discounts, curated drops, and live order tracking."
+        : "Push notifications are working perfectly! You will receive instant alerts whenever a customer places an order.",
+    url: audience === "customer" ? "/account" : "/admin/orders",
     tag: `test-alert-${Date.now()}`,
   };
 
@@ -269,6 +313,13 @@ export async function broadcastAnnouncement(options: {
   let targetSubs: PushSubscriptionRecord[] = [];
   if (audience === "all") {
     targetSubs = await getAllPushSubscriptions();
+  } else if (audience === "customer") {
+    const customerSubs = await getAllPushSubscriptions("customer");
+    const adminSubs = await getAllPushSubscriptions("admin");
+    const map = new Map<string, PushSubscriptionRecord>();
+    for (const s of customerSubs) map.set(s.endpoint, s);
+    for (const s of adminSubs) map.set(s.endpoint, s); // include testing admin devices
+    targetSubs = Array.from(map.values());
   } else {
     targetSubs = await getAllPushSubscriptions(audience);
   }
@@ -325,6 +376,28 @@ export async function broadcastAnnouncement(options: {
 
   saveAnnouncementLocal(record);
 
+  // Also persist to Supabase orders table for permanent cloud history on Vercel
+  try {
+    const supabase = createAdminClient();
+    await supabase.from("orders").insert({
+      order_number: `ANN-${Date.now()}`,
+      customer_name: title.trim().slice(0, 50),
+      customer_phone: "0000000000",
+      shipping_address: record as any,
+      total_paise: 0,
+      subtotal_paise: 0,
+      delivery_fee_paise: 0,
+      discount_paise: 0,
+      delivery_date: new Date().toISOString().split("T")[0],
+      payment_method: "upi_manual",
+      payment_status: "paid",
+      status: "completed",
+      admin_notes: "ANNOUNCEMENT_LOG",
+    });
+  } catch (dbErr) {
+    console.warn("Could not save announcement log to Supabase orders:", dbErr);
+  }
+
   return {
     success: targetSubs.length === 0 ? true : sent > 0,
     sent,
@@ -332,6 +405,45 @@ export async function broadcastAnnouncement(options: {
     total: targetSubs.length,
     announcement: record,
   };
+}
+
+/**
+ * Fetch announcement broadcast history from Supabase and local store
+ */
+export async function getAnnouncementHistory(): Promise<AnnouncementRecord[]> {
+  const mergedMap = new Map<string, AnnouncementRecord>();
+
+  try {
+    const supabase = createAdminClient();
+    const { data: dbLogs } = await supabase
+      .from("orders")
+      .select("shipping_address, created_at, id")
+      .eq("admin_notes", "ANNOUNCEMENT_LOG")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (dbLogs && Array.isArray(dbLogs)) {
+      for (const row of dbLogs) {
+        const item = row.shipping_address as any;
+        if (item && item.title) {
+          mergedMap.set(item.id || row.id, item);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Error loading announcement history from Supabase:", err);
+  }
+
+  const localHistory = getAnnouncementsLocal();
+  for (const h of localHistory) {
+    if (!mergedMap.has(h.id)) {
+      mergedMap.set(h.id, h);
+    }
+  }
+
+  return Array.from(mergedMap.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 }
 
 /**

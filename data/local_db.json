@@ -877,6 +877,28 @@
   ],
   "announcements": [
     {
+      "id": "ann-1790679365053-z4t1",
+      "title": "🎉 Festive Special: Flat 20% OFF on Luxury Hampers!",
+      "body": "Celebrate in style! Enjoy exclusive 20% savings on our handcrafted gift boxes and keepsakes.",
+      "url": "/",
+      "audience": "all",
+      "sent_count": 0,
+      "failed_count": 3,
+      "total_targets": 3,
+      "created_at": "2026-09-29T10:56:05.053Z"
+    },
+    {
+      "id": "ann-1790679354001-o8hu",
+      "title": "🎉 Festive Special: Flat 20% OFF on Luxury Hampers!",
+      "body": "Celebrate in style! Enjoy exclusive 20% savings on our handcrafted gift boxes and keepsakes.",
+      "url": "/gifts",
+      "audience": "all",
+      "sent_count": 0,
+      "failed_count": 3,
+      "total_targets": 3,
+      "created_at": "2026-09-29T10:55:54.001Z"
+    },
+    {
       "id": "ann-1790671776230-7s3f",
       "title": "chukj",
       "body": "hjhkjhhkj",

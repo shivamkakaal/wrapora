@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Bell, Sparkles, CheckCircle2, AlertCircle, X, Gift, Truck } from "lucide-react";
+import { useCustomerStore } from "@/lib/store/customer";
 import { subscribeUserToPush } from "@/lib/utils/push";
 
 export default function NotificationPrompt() {
+  const { phone, name } = useCustomerStore();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
@@ -41,7 +43,7 @@ export default function NotificationPrompt() {
       setLoading(true);
       setStatusMessage(null);
 
-      const res = await subscribeUserToPush("customer");
+      const res = await subscribeUserToPush("customer", phone || undefined, name || undefined);
 
       if (res.success) {
         setStatusMessage({

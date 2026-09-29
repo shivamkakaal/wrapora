@@ -1,9 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sendTestNotification } from "@/lib/services/push";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const result = await sendTestNotification("admin");
+    let audience: "customer" | "admin" = "customer";
+    try {
+      const body = await request.json();
+      if (body.audience === "admin" || body.audience === "customer") {
+        audience = body.audience;
+      }
+    } catch {
+      // default customer
+    }
+
+    const result = await sendTestNotification(audience);
     return NextResponse.json({
       ok: result.success,
       ...result,

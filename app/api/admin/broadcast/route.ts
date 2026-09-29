@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { broadcastAnnouncement, getAllPushSubscriptions } from "@/lib/services/push";
-import { getAnnouncementsLocal } from "@/lib/db/local_store";
+import { broadcastAnnouncement, getAllPushSubscriptions, getAnnouncementHistory } from "@/lib/services/push";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +8,7 @@ export async function GET() {
     const allSubs = await getAllPushSubscriptions();
     const customerSubs = allSubs.filter((s) => s.audience === "customer");
     const adminSubs = allSubs.filter((s) => s.audience === "admin");
-    const history = getAnnouncementsLocal();
+    const history = await getAnnouncementHistory();
 
     return NextResponse.json({
       ok: true,

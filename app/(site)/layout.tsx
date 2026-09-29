@@ -5,6 +5,7 @@ import WhatsAppWidget from "@/components/site/WhatsAppWidget";
 import PwaRegister from "@/components/site/PwaRegister";
 import MobileBottomNav from "@/components/site/MobileBottomNav";
 import NotificationPrompt from "@/components/site/NotificationPrompt";
+import PushAutoEnrollment from "@/components/site/PushAutoEnrollment";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <WhatsAppWidget />
       <MobileBottomNav />
       <PwaRegister />
+      <PushAutoEnrollment />
       <NotificationPrompt />
     </>
   );
