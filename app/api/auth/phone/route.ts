@@ -23,40 +23,118 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check existing customer or create/update
-    const existing = getCustomerByPhoneLocal(normPhone);
+    // Check existing customer locally
+    const existingLocal = getCustomerByPhoneLocal(normPhone);
+
+    // Query Supabase orders for this phone to check existing orders/registrations
+    const supabase = createAdminClient();
+    let dbOrders: any[] = [];
+
+    try {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_number, customer_name, customer_phone, customer_email, shipping_address, total_paise, created_at, admin_notes")
+        .eq("customer_phone", normPhone);
+      if (data) {
+        dbOrders = data;
+      }
+    } catch (err) {
+      console.warn("Could not query Supabase orders for customer registration:", err);
+    }
+
+    const hasRecords = dbOrders.length > 0;
+
+    if (!hasRecords) {
+      // New user registration: Insert registration record into Supabase orders
+      try {
+        await supabase.from("orders").insert({
+          order_number: `REG-${normPhone}`,
+          customer_name: name || "Registered Customer",
+          customer_phone: normPhone,
+          customer_email: body.email || null,
+          shipping_address: {
+            city: body.city || "Kathua",
+            line1: "Registered User (Direct Sign-in)",
+            state: "Jammu & Kashmir",
+          },
+          delivery_date: new Date().toISOString().split("T")[0],
+          total_paise: 0,
+          subtotal_paise: 0,
+          delivery_fee_paise: 0,
+          discount_paise: 0,
+          payment_method: "upi_manual",
+          payment_status: "unpaid",
+          status: "pending",
+          admin_notes: "CUSTOMER_REGISTRATION",
+        });
+      } catch (insertErr) {
+        console.error("Failed to insert registration order in Supabase:", insertErr);
+      }
+    } else if (name) {
+      // If customer has only generic or missing name, record an updated registration entry
+      const hasRealName = dbOrders.some(
+        (o) => o.customer_name && o.customer_name !== "Registered Customer"
+      );
+      if (!hasRealName) {
+        try {
+          await supabase.from("orders").insert({
+            order_number: `REG-${normPhone}-${Date.now().toString().slice(-4)}`,
+            customer_name: name,
+            customer_phone: normPhone,
+            customer_email: body.email || null,
+            shipping_address: {
+              city: body.city || "Kathua",
+              line1: "Registered User (Name Update)",
+              state: "Jammu & Kashmir",
+            },
+            delivery_date: new Date().toISOString().split("T")[0],
+            total_paise: 0,
+            subtotal_paise: 0,
+            delivery_fee_paise: 0,
+            discount_paise: 0,
+            payment_method: "upi_manual",
+            payment_status: "unpaid",
+            status: "pending",
+            admin_notes: "CUSTOMER_REGISTRATION",
+          });
+        } catch (updateErr) {
+          console.error("Failed to record updated registration in Supabase:", updateErr);
+        }
+      }
+    }
+
+    // Calculate real order counts and spend
+    const realOrders = dbOrders.filter(
+      (o) => !o.order_number?.startsWith("REG-") && o.admin_notes !== "CUSTOMER_REGISTRATION"
+    );
+    const totalOrders = realOrders.length;
+    const totalSpentPaise = realOrders.reduce((sum, o) => sum + (o.total_paise || 0), 0);
+    const latestAddress = dbOrders.find((o) => o.shipping_address?.line1)?.shipping_address || null;
+    const resolvedName =
+      name ||
+      existingLocal?.name ||
+      dbOrders.find((o) => o.customer_name && o.customer_name !== "Registered Customer")?.customer_name ||
+      null;
 
     const saved = saveCustomerLocal({
       phone: normPhone,
-      name: name || existing?.name || null,
-      city: body.city || existing?.city || null,
+      name: resolvedName,
+      city: body.city || (latestAddress?.city) || existingLocal?.city || null,
+      total_orders: totalOrders,
+      total_spent_paise: totalSpentPaise,
+      saved_address: latestAddress || existingLocal?.saved_address || null,
     });
-
-    // Also attempt to sync with Supabase if customer leads table exists
-    try {
-      const supabase = createAdminClient();
-      await supabase.from("customer_leads").upsert(
-        {
-          phone: normPhone,
-          name: saved.name,
-          last_active_at: new Date().toISOString(),
-        },
-        { onConflict: "phone" }
-      );
-    } catch {
-      // Supabase table is optional fallback
-    }
 
     return NextResponse.json({
       ok: true,
       customer: {
-        id: saved.id,
-        phone: saved.phone,
-        name: saved.name,
+        id: saved.id || `cust-${normPhone}`,
+        phone: normPhone,
+        name: resolvedName,
         email: saved.email || null,
-        savedAddress: saved.saved_address || null,
-        totalOrders: saved.total_orders,
-        totalSpentPaise: saved.total_spent_paise,
+        savedAddress: latestAddress || saved.saved_address || null,
+        totalOrders,
+        totalSpentPaise,
       },
     });
   } catch (error: any) {
@@ -67,3 +145,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

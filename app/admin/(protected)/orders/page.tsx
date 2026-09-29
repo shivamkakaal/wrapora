@@ -14,17 +14,22 @@ export default async function AdminOrdersPage() {
     const { data: orders } = await supabase
       .from("orders")
       .select("*, order_items(count)")
+      .not("order_number", "like", "REG-%")
       .order("created_at", { ascending: false });
 
     if (orders && orders.length > 0) {
-      ordersList = orders;
+      ordersList = orders.filter(
+        (o) => !o.order_number?.startsWith("REG-") && o.admin_notes !== "CUSTOMER_REGISTRATION"
+      );
     }
   } catch (e) {
     console.warn("Supabase orders query error, falling back to local store:", e);
   }
 
   // If Supabase has none or fewer, also merge with local store orders
-  const localOrders = getOrdersLocal();
+  const localOrders = getOrdersLocal().filter(
+    (o) => !o.order_number?.startsWith("REG-") && o.admin_notes !== "CUSTOMER_REGISTRATION"
+  );
   const existingIds = new Set(ordersList.map((o) => o.id));
   for (const lo of localOrders) {
     if (!existingIds.has(lo.id)) {
