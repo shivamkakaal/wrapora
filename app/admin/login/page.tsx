@@ -1,9 +1,11 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { loginAdmin } from "@/lib/actions/auth";
 import { Eye, EyeOff, Lock } from "lucide-react";
+import AdminPwaManager from "@/components/admin/AdminPwaManager";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -131,6 +133,14 @@ export default function AdminLoginPage() {
         <Suspense fallback={<div className="bg-white rounded-2xl p-8 shadow-2xl text-center text-ink/50">Loading...</div>}>
           <LoginForm />
         </Suspense>
+
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <AdminPwaManager variant="pill" />
+          <Link href="/" className="text-xs text-white/50 hover:text-white transition-colors">
+            ← Return to WRAPORA Store
+          </Link>
+        </div>
+        <AdminPwaManager variant="floating-only" />
       </div>
     </div>
   );

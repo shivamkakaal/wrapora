@@ -1,15 +1,19 @@
 // WRAPORA PWA Service Worker
-const CACHE_NAME = "wrapora-v2";
+const CACHE_NAME = "wrapora-v3";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
   "/",
   "/offline.html",
   "/manifest.webmanifest",
+  "/manifest-admin.webmanifest",
   "/favicon.png",
   "/apple-touch-icon.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icons/admin-icon-192.png",
+  "/icons/admin-icon-512.png",
+  "/icons/admin-apple-touch-icon.png",
   "/images/wrapora-logo.png",
 ];
 

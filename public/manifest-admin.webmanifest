@@ -1,0 +1,58 @@
+{
+  "name": "WRAPORA Admin Console",
+  "short_name": "WRAPORA Admin",
+  "description": "WRAPORA Executive Management, Real-Time Orders, Leads & Broadcast Push Control",
+  "id": "/admin",
+  "start_url": "/admin?source=pwa_admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#18042B",
+  "theme_color": "#1F0838",
+  "icons": [
+    {
+      "src": "/icons/admin-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/admin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/admin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Orders",
+      "short_name": "Orders",
+      "url": "/admin/orders",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Broadcast & Alerts",
+      "short_name": "Broadcast",
+      "url": "/admin/announcements",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Event Leads",
+      "short_name": "Leads",
+      "url": "/admin/leads",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Products Catalog",
+      "short_name": "Products",
+      "url": "/admin/products",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
