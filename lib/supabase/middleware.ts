@@ -36,7 +36,27 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const adminCookie = request.cookies.get("wrapoura_admin_session");
-  const isAuthenticatedAdmin = !!user || !!adminCookie?.value;
+
+  // Authorized Admin Mobile Numbers
+  const ALLOWED_ADMIN_PHONES = (
+    process.env.ADMIN_ALLOWED_PHONES || "7006506721,9541223100"
+  )
+    .split(",")
+    .map((p) => p.trim().replace(/\D/g, "").slice(-10))
+    .filter(Boolean);
+
+  let isAuthenticatedAdmin = false;
+  if (adminCookie?.value) {
+    try {
+      const session = JSON.parse(adminCookie.value);
+      const sessionPhone = session.phone ? String(session.phone).replace(/\D/g, "").slice(-10) : "";
+      if (session.role === "admin" && ALLOWED_ADMIN_PHONES.includes(sessionPhone)) {
+        isAuthenticatedAdmin = true;
+      }
+    } catch {
+      isAuthenticatedAdmin = false;
+    }
+  }
 
   // Handle direct /admin or /admin/ visits
   if (pathname === "/admin" || pathname === "/admin/") {
@@ -52,6 +72,13 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/admin/login";
       url.searchParams.set("next", pathname);
       return NextResponse.redirect(url);
+    }
+  }
+
+  // Protect /api/admin routes
+  if (pathname.startsWith("/api/admin")) {
+    if (!isAuthenticatedAdmin) {
+      return NextResponse.json({ ok: false, error: "Unauthorized admin access" }, { status: 401 });
     }
   }
 
