@@ -183,16 +183,8 @@ export default function AdminPwaManager({ variant = "floating-only", className =
   // --- Variant 2: Compact Header Pill ---
   if (variant === "pill") {
     if (isStandalone) {
-      return (
-        <div
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold shadow-xs ${className}`}
-          title="WRAPORA Admin PWA is running in standalone mode"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="hidden sm:inline">PWA Active</span>
-          <span className="sm:hidden">Active</span>
-        </div>
-      );
+      // In standalone PWA mode, keep the header clean and uncluttered
+      return null;
     }
 
     return (

@@ -183,7 +183,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden flex flex-col">
         {/* Mobile Header with Hamburger */}
-        <header className="md:hidden bg-[#1F0838] text-white p-3 px-4 flex items-center justify-between shadow-md sticky top-0 z-30">
+        <header className="md:hidden bg-[#1F0838] text-white pt-[max(env(safe-area-inset-top),14px)] pb-3 px-4 flex items-center justify-between shadow-md sticky top-0 z-30">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
@@ -217,30 +217,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        {/* Mobile Horizontal Quick Nav */}
-        <nav className="md:hidden flex overflow-x-auto gap-1.5 p-2 bg-white border-b sticky top-[52px] z-20 shadow-2xs no-scrollbar overscroll-x-contain">
-          {adminLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 transition-all ${
-                  isActive
-                    ? "bg-[#1F0838] text-white shadow-xs"
-                    : "text-ink/65 hover:text-ink bg-gray-50 border border-gray-100"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
         {/* Page Inner Container */}
-        <div className="p-3 sm:p-5 md:p-8 max-w-7xl mx-auto w-full min-w-0 pb-28 md:pb-8 flex-1">
+        <div className="p-3 sm:p-5 md:p-8 max-w-7xl mx-auto w-full min-w-0 pb-24 md:pb-8 flex-1">
           <AdminNotificationCenter />
           <AdminPwaManager variant="floating-only" />
           {children}
@@ -250,7 +228,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav
           role="navigation"
           aria-label="Mobile Navigation"
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18042B]/95 backdrop-blur-lg border-t border-white/10 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_25px_rgba(0,0,0,0.5)] safe-area-bottom"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18042B]/95 backdrop-blur-lg border-t border-white/10 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] flex items-center justify-around shadow-[0_-4px_25px_rgba(0,0,0,0.5)]"
         >
           {bottomTabItems.map((item) => {
             const Icon = item.icon;

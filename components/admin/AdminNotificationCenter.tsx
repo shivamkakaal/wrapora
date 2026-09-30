@@ -81,16 +81,34 @@ export default function AdminNotificationCenter() {
   const [loading, setLoading] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeToast, setActiveToast] = useState<NewOrderToast | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(true);
   const lastKnownOrderIdRef = useRef<string | null>(null);
 
-  // Check current notification state on mount
+  // Check current notification state & dismissal on mount
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setPermission(Notification.permission);
-      checkExistingSubscription();
+    if (typeof window !== "undefined") {
+      const dismissedUntil = localStorage.getItem("wrapoura_admin_notif_banner_dismissed");
+      if (!dismissedUntil || Number(dismissedUntil) < Date.now()) {
+        setBannerDismissed(false);
+      }
+      if ("Notification" in window) {
+        setPermission(Notification.permission);
+        checkExistingSubscription();
+      }
     }
   }, []);
+
+  const handleDismissBanner = () => {
+    setBannerDismissed(true);
+    try {
+      localStorage.setItem(
+        "wrapoura_admin_notif_banner_dismissed",
+        String(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      );
+    } catch {
+      // ignore
+    }
+  };
 
   const checkExistingSubscription = async () => {
     if (!("serviceWorker" in navigator)) return;
@@ -266,91 +284,46 @@ export default function AdminNotificationCenter() {
 
   return (
     <>
-      {/* Top Banner for Notification Setup */}
-      {!bannerDismissed && (
-        <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#200538] via-[#350A57] to-[#1A032F] p-4 text-white shadow-lg border border-pink-500/20">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-              <div className="relative p-2.5 rounded-xl bg-white/10 ring-1 ring-white/20 flex-shrink-0 mt-0.5 sm:mt-0">
-                <Bell className="w-5 h-5 text-pink-300 animate-bounce" />
-                {isSubscribed && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full ring-2 ring-[#200538]" />
-                )}
+      {/* Top Banner for Notification Setup (Only shown if NOT subscribed & NOT dismissed) */}
+      {!isSubscribed && !bannerDismissed && (
+        <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#200538] via-[#350A57] to-[#1A032F] p-3 sm:p-3.5 text-white shadow-md border border-pink-500/25 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="p-2 rounded-lg bg-pink-500/20 ring-1 ring-pink-500/30 flex-shrink-0 text-pink-300">
+                <Bell className="w-4 h-4 animate-bounce" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-sm tracking-wide">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-xs sm:text-sm tracking-wide text-white truncate">
                     Live Order Push Notifications
                   </h3>
-                  {isSubscribed ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      <CheckCircle2 className="w-3 h-3" /> Active on this Device
-                    </span>
-                  ) : permission === "denied" ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30">
-                      <AlertCircle className="w-3 h-3" /> Blocked in Browser
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                      Setup Needed
-                    </span>
-                  )}
+                  <span className="hidden sm:inline-flex text-[10px] font-semibold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    Setup Needed
+                  </span>
                 </div>
-                <p className="text-xs text-white/70 mt-0.5 leading-snug">
-                  Get instant push notifications and loud chime sound whenever a customer places an order.
+                <p className="text-[11px] sm:text-xs text-white/70 line-clamp-1">
+                  Get instant push alerts and audio chime on new orders.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end flex-wrap pt-2 sm:pt-0 border-t border-white/10 sm:border-t-0">
-              {/* Sound Toggle */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  const nextState = !soundEnabled;
-                  setSoundEnabled(nextState);
-                  if (nextState) playOrderChime();
-                }}
-                className={`p-2 rounded-xl text-xs font-medium border transition-colors flex items-center gap-1.5 cursor-pointer ${
-                  soundEnabled
-                    ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
-                    : "bg-white/5 border-white/10 text-white/40 hover:text-white"
-                }`}
-                title={soundEnabled ? "Order chime is ON" : "Order chime is Muted"}
+                onClick={enablePushNotifications}
+                disabled={loading || permission === "denied"}
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs rounded-lg sm:rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1"
               >
-                {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-300" /> : <VolumeX className="w-4 h-4" />}
-                <span className="hidden md:inline">{soundEnabled ? "Sound ON" : "Muted"}</span>
+                <Bell className="w-3.5 h-3.5" />
+                <span>{loading ? "..." : "Enable"}</span>
               </button>
 
-              {/* Enable / Subscribe Button */}
-              {!isSubscribed ? (
-                <button
-                  type="button"
-                  onClick={enablePushNotifications}
-                  disabled={loading || permission === "denied"}
-                  className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-medium text-xs rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                >
-                  <Bell className="w-3.5 h-3.5" />
-                  {loading ? "Activating..." : "Enable Push Alerts"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={sendTestNotification}
-                  disabled={loading}
-                  className="px-3.5 py-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-medium text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  <Bell className="w-3.5 h-3.5 text-pink-300" />
-                  Test Push Alert
-                </button>
-              )}
-
-              {/* Dismiss */}
               <button
                 type="button"
-                onClick={() => setBannerDismissed(true)}
-                className="p-1.5 text-white/40 hover:text-white/80 rounded-lg cursor-pointer transition-colors"
+                onClick={handleDismissBanner}
+                className="p-1.5 text-white/40 hover:text-white rounded-lg cursor-pointer transition-colors"
                 title="Dismiss Banner"
+                aria-label="Dismiss banner"
               >
                 <X className="w-4 h-4" />
               </button>

@@ -173,18 +173,18 @@ export default function AnnouncementsManager() {
       : stats.adminSubscribers;
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-5 sm:space-y-8 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100/80 text-[#D91B60] text-xs font-bold mb-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pink-100/80 text-[#D91B60] text-[11px] sm:text-xs font-bold mb-1.5">
             <Sparkles className="w-3.5 h-3.5" />
             <span>PWA & Web Push Notification Hub</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-playfair text-ink">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-playfair text-ink leading-tight">
             Broadcast Announcements & Alerts
           </h1>
-          <p className="text-xs sm:text-sm text-ink/60 mt-1">
+          <p className="text-xs sm:text-sm text-ink/60 mt-1 leading-snug">
             Send instant notifications directly to smartphones and devices of users who installed the app or subscribed.
           </p>
         </div>
@@ -193,55 +193,55 @@ export default function AnnouncementsManager() {
           type="button"
           onClick={fetchStatsAndHistory}
           disabled={loadingStats}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-ink/80 text-xs font-bold hover:bg-gray-50 transition-colors shadow-xs self-start md:self-auto cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white border border-gray-200 text-ink/80 text-xs font-bold hover:bg-gray-50 transition-colors shadow-xs self-start md:self-auto cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loadingStats ? "animate-spin" : ""}`} />
           <span>Refresh Stats</span>
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-purple-100 shadow-xs">
+      {/* Stats Cards - Clean 2x2 Grid on Mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-purple-100 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Total Subscribed</span>
-            <div className="w-8 h-8 rounded-xl bg-pink-50 text-[#D91B60] flex items-center justify-center">
-              <Smartphone className="w-4 h-4" />
+            <span className="text-[10px] sm:text-xs font-semibold text-ink/50 uppercase tracking-wider">Subscribed</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-pink-50 text-[#D91B60] flex items-center justify-center">
+              <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <p className="text-2xl font-extrabold text-ink mt-3">{stats.totalSubscribers}</p>
-          <p className="text-[11px] text-ink/50 mt-1">Registered push devices</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-ink mt-2 sm:mt-3">{stats.totalSubscribers}</p>
+          <p className="text-[10px] sm:text-[11px] text-ink/50 mt-0.5 sm:mt-1 truncate">Push devices</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-purple-100 shadow-xs">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-purple-100 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Customers / App Users</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+            <span className="text-[10px] sm:text-xs font-semibold text-ink/50 uppercase tracking-wider">Customers</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <p className="text-2xl font-extrabold text-ink mt-3">{stats.customerSubscribers}</p>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-1">Storefront & PWA Clients</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-ink mt-2 sm:mt-3">{stats.customerSubscribers}</p>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-0.5 sm:mt-1 truncate">Store clients</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-purple-100 shadow-xs">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-purple-100 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Admin Devices</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-[#250842] flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-[#D91B60]" />
+            <span className="text-[10px] sm:text-xs font-semibold text-ink/50 uppercase tracking-wider">Admins</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-purple-50 text-[#250842] flex items-center justify-center">
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D91B60]" />
             </div>
           </div>
-          <p className="text-2xl font-extrabold text-ink mt-3">{stats.adminSubscribers}</p>
-          <p className="text-[11px] text-ink/50 mt-1">Management staff alerts</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-ink mt-2 sm:mt-3">{stats.adminSubscribers}</p>
+          <p className="text-[10px] sm:text-[11px] text-ink/50 mt-0.5 sm:mt-1 truncate">Staff devices</p>
         </div>
 
-        <div className="bg-gradient-to-br from-[#250842] to-[#3B0764] p-5 rounded-2xl text-white shadow-md">
+        <div className="bg-gradient-to-br from-[#250842] to-[#3B0764] p-3.5 sm:p-5 rounded-2xl text-white shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-pink-200 uppercase tracking-wider">Web-Push Engine</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] sm:text-xs font-semibold text-pink-200 uppercase tracking-wider">Engine</span>
+            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           </div>
-          <p className="text-base font-bold text-white mt-3">VAPID Active</p>
-          <p className="text-[11px] text-purple-200/80 mt-1">Ready to deliver push alerts</p>
+          <p className="text-sm sm:text-base font-bold text-white mt-2 sm:mt-3 truncate">VAPID Active</p>
+          <p className="text-[10px] sm:text-[11px] text-purple-200/80 mt-0.5 sm:mt-1 truncate">Push ready</p>
         </div>
       </div>
 
