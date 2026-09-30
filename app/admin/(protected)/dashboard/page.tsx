@@ -51,22 +51,29 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Dashboard</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <h1 className="text-2xl sm:text-3xl font-bold font-playfair text-ink">Executive Dashboard</h1>
+        <p className="text-xs text-ink/50">Overview of orders, leads, and store performance</p>
+      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Link key={stat.label} href={stat.href} className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <Link
+              key={stat.label}
+              href={stat.href}
+              className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 hover:shadow-md transition-all min-w-0"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
                 <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.color}`}>
                   <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-ink/60 truncate">{stat.label}</p>
-                  <p className="text-base sm:text-xl font-extrabold text-ink truncate mt-0.5">{stat.value}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] sm:text-xs text-ink/60 truncate">{stat.label}</p>
+                  <p className="text-sm sm:text-xl font-extrabold text-ink truncate mt-0.5">{stat.value}</p>
                 </div>
               </div>
             </Link>
@@ -75,23 +82,27 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-            <h2 className="font-semibold text-ink">Recent Orders</h2>
-            <Link href="/admin/orders" className="text-xs text-royal font-medium">View All →</Link>
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xs">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-gray-50 bg-gray-50/50">
+            <h2 className="font-bold text-sm sm:text-base text-ink">Recent Orders</h2>
+            <Link href="/admin/orders" className="text-xs text-royal font-semibold hover:underline">View All →</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {(recentOrders || []).map((order) => (
-              <div key={order.id} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-ink">{order.order_number}</p>
-                  <p className="text-xs text-ink/50">{order.customer_name} • {formatDate(order.created_at)}</p>
+              <div key={order.id} className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <Link href={`/admin/orders/${order.id}`} className="text-sm font-semibold text-royal hover:underline block truncate">
+                    {order.order_number}
+                  </Link>
+                  <p className="text-xs text-ink/50 truncate mt-0.5">
+                    {order.customer_name} • {formatDate(order.created_at)}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-ink">{formatPaiseToInr(order.total_paise)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                <div className="text-right flex-shrink-0">
+                  <p className="text-xs sm:text-sm font-bold text-ink">{formatPaiseToInr(order.total_paise)}</p>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-block mt-0.5 ${
                     order.status === "pending" ? "bg-amber-50 text-amber-700" :
                     order.status === "confirmed" ? "bg-blue-50 text-blue-700" :
                     order.status === "completed" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
@@ -106,21 +117,25 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-            <h2 className="font-semibold text-ink">Recent Leads</h2>
-            <Link href="/admin/leads" className="text-xs text-royal font-medium">View All →</Link>
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xs">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-gray-50 bg-gray-50/50">
+            <h2 className="font-bold text-sm sm:text-base text-ink">Recent Event Leads</h2>
+            <Link href="/admin/leads" className="text-xs text-royal font-semibold hover:underline">View All →</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {(recentLeads || []).map((lead) => (
-              <div key={lead.id} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-ink">{lead.lead_number}</p>
-                  <p className="text-xs text-ink/50">{lead.full_name} • {lead.event_type.replace(/_/g, " ")}</p>
+              <div key={lead.id} className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <Link href={`/admin/leads/${lead.id}`} className="text-sm font-semibold text-royal hover:underline block truncate">
+                    {lead.lead_number}
+                  </Link>
+                  <p className="text-xs text-ink/50 truncate mt-0.5">
+                    {lead.full_name} • {lead.event_type.replace(/_/g, " ")}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-ink/50">{formatDate(lead.event_date)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[11px] text-ink/50">{formatDate(lead.event_date || lead.created_at)}</p>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-block mt-0.5 ${
                     lead.status === "pending" ? "bg-amber-50 text-amber-700" :
                     lead.status === "confirmed" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"
                   }`}>{lead.status}</span>

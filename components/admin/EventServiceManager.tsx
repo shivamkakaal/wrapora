@@ -119,8 +119,77 @@ export default function EventServiceManager({ initialServices }: EventServiceMan
         </div>
       )}
 
-      {/* Services Grid / Table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+      {/* Mobile Services Card View (< md) */}
+      <div className="md:hidden space-y-3">
+        {services.map((service) => (
+          <div key={service.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-xs space-y-3">
+            <div className="flex items-start gap-3">
+              {service.cover_image ? (
+                <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100">
+                  <img src={service.cover_image} alt={service.title} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-purple-50 text-royal flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-6 h-6" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold text-ink/50 uppercase bg-gray-100 px-2 py-0.5 rounded-md truncate">
+                    {service.type.replace(/_/g, " ")}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      service.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {service.is_active ? "Active" : "Hidden"}
+                  </span>
+                </div>
+                <h3 className="font-bold text-sm text-ink truncate mt-1">{service.title}</h3>
+                <p className="text-xs font-semibold text-[#D91B60] mt-0.5">
+                  {service.starting_price_paise
+                    ? `From ${formatPaiseToInr(service.starting_price_paise)}`
+                    : "Price on Request"}
+                </p>
+              </div>
+            </div>
+
+            {service.summary && (
+              <p className="text-xs text-ink/60 line-clamp-2 bg-gray-50 p-2.5 rounded-xl">
+                {service.summary}
+              </p>
+            )}
+
+            <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => handleEdit(service)}
+                className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-ink/80 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Edit className="w-3.5 h-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(service.id, service.title)}
+                disabled={deletingId === service.id}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {deletingId === service.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Delete
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {services.length === 0 && (
+          <div className="p-8 text-center bg-white rounded-2xl border border-gray-100 text-ink/50 text-sm">
+            No event services created yet. Click "Add Service" above.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Services Table (>= md) */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -205,8 +274,8 @@ export default function EventServiceManager({ initialServices }: EventServiceMan
 
       {/* Modal / Slide-in Editor */}
       {editingService && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl space-y-5 my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 my-4 sm:my-8">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <h2 className="text-lg font-bold font-playfair text-ink">
                 {editingService.id ? "Edit Event Service" : "New Event Service"}

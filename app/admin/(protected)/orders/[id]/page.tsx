@@ -56,17 +56,17 @@ export default async function AdminOrderDetailPage({ params }: OrderDetailPagePr
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between print:hidden">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
+        <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/admin/orders"
-            className="p-2 rounded-xl bg-white border border-gray-200 text-ink/60 hover:text-ink transition-colors"
+            className="p-2 rounded-xl bg-white border border-gray-200 text-ink/60 hover:text-ink transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold font-playfair text-ink">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold font-playfair text-ink">
                 Order {order.order_number}
               </h1>
               <span

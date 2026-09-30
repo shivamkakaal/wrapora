@@ -1363,8 +1363,8 @@ export default function HomepageCustomizer({ initialContent }: HomepageCustomize
       {/* MODAL: ADD / EDIT SERVICE                                                 */}
       {/* ========================================================================= */}
       {serviceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 space-y-4 animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md shadow-2xl border border-gray-100 space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="font-bold text-lg text-[#1F1030]">
                 {editingServiceIndex !== null ? "Edit Service" : "Add New Service"}

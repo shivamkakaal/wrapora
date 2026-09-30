@@ -75,7 +75,7 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
 
   return (
     <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-playfair text-ink">Store Settings</h1>
           <p className="text-xs text-ink/50 mt-1">Configure delivery rules, service cities, and feature toggles</p>
@@ -83,7 +83,7 @@ export default function SettingsManager({ initialSettings }: SettingsManagerProp
         <button
           type="submit"
           disabled={loading}
-          className="brand-gradient text-white px-5 py-2.5 rounded-xl font-semibold text-xs shadow-royal hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer"
+          className="brand-gradient text-white px-5 py-2.5 rounded-xl font-semibold text-xs shadow-royal hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
         >
           {success ? (
             <>
